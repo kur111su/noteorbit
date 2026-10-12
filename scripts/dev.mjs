@@ -1,0 +1,12 @@
+import { createServer } from 'vite';
+import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const server = await createServer();
+await server.listen();
+const env = { ...process.env, GALAXY_DEV_URL: 'http://127.0.0.1:5173' };
+delete env.ELECTRON_RUN_AS_NODE;
+const child = spawn(require('electron'), ['.'], { env, stdio: 'inherit', windowsHide: true });
+const cleanup = async () => { child.kill(); await server.close(); };
+process.on('SIGINT', cleanup); process.on('SIGTERM', cleanup);
+child.on('exit', async code => { await server.close(); process.exit(code ?? 0); });

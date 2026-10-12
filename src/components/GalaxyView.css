@@ -1,0 +1,54 @@
+.galaxy-view { display: flex; flex-direction: column; min-width: 0; width: 100%; border: 1px solid #263044; border-radius: 14px; overflow: hidden; background: #070c18; color: #dce6f6; box-shadow: 0 18px 50px #0000001a; }
+.galaxy-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 13px 15px; background: #101827; border-bottom: 1px solid #243044; position: relative; z-index: 5; min-height: 58px; }
+.galaxy-toolbar button, .galaxy-view select { font: inherit; font-size: 12px; color: #c3cfe2; background: #192336; border: 1px solid #2b3951; border-radius: 7px; min-height: 32px; cursor: pointer; }
+.galaxy-toolbar button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; }
+.galaxy-toolbar button:hover, .galaxy-focus-actions button:hover { background: #263451; color: #eef3ff; border-color: #50668b; }
+.galaxy-toolbar button:disabled { opacity: .4; cursor: not-allowed; }
+.galaxy-view select { max-width: 180px; padding: 6px 9px; outline: none; }
+.galaxy-view select:focus, .galaxy-search:focus-within { border-color: #8394e5; }
+.galaxy-search { display: flex; position: relative; align-items: center; gap: 8px; background: #080f1e; color: #7285a4; border: 1px solid #28354b; border-radius: 7px; min-width: 175px; width: 225px; padding: 0 9px; height: 34px; }
+.galaxy-search input { width: 100%; min-width: 0; border: 0; background: transparent; outline: none; padding: 5px 0; color: #e1e9f7; font: inherit; font-size: 12px; }
+.galaxy-search input::placeholder { color: #71809b; }
+.galaxy-search > button { border: 0; padding: 0; background: none; min-height: unset; color: #8597b4; }
+.galaxy-search-results { position: absolute; left: 0; top: 41px; width: 320px; max-width: 75vw; padding: 5px; background: #142036; border: 1px solid #34435e; border-radius: 9px; box-shadow: 0 16px 40px #0007; }
+.galaxy-search-results button { display: flex; width: 100%; text-align: left; gap: 9px; border: 0; background: transparent; padding: 9px; justify-content: flex-start; }
+.galaxy-search-results button > i, .galaxy-legend i, .galaxy-focus-card > div > i { display: inline-block; width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+.galaxy-search-results button > span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.galaxy-search-results small { display: block; color: #8294b0; font-size: 10px; margin-top: 3px; }
+.galaxy-search-results p { margin: 10px; font-size: 12px; }
+.galaxy-display-toggles { display: flex; align-items: center; gap: 11px; padding: 0 3px; }
+.galaxy-display-toggles label { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #a5b4ce; cursor: pointer; white-space: nowrap; }
+.galaxy-display-toggles input { accent-color: #8a9df2; margin: 0; width: 13px; height: 13px; }
+.galaxy-toolbar-end { display: flex; gap: 7px; margin-left: auto; }
+.galaxy-canvas { position: relative; height: clamp(540px, calc(100vh - 205px), 960px); min-height: 540px; width: 100%; overflow: hidden; background: radial-gradient(ellipse at 50% 50%, #142038 0%, #070c18 65%); isolation: isolate; }
+.galaxy-canvas > div:first-child > canvas { display: block; }
+.galaxy-map-heading { position: absolute; top: 29px; left: 30px; pointer-events: none; }
+.galaxy-eyebrow { font-size: 9px; letter-spacing: 2.4px; font-weight: 600; color: #8296ba; }
+.galaxy-map-heading h2 { font-size: 17px; font-weight: 500; letter-spacing: .4px; color: #d1ddf0; margin: 9px 0 8px; }
+.galaxy-map-heading p { font-size: 11px; color: #70829f; margin: 0; }
+.galaxy-stats { position: absolute; right: 25px; top: 28px; display: flex; align-items: center; gap: 13px; font-size: 11px; color: #7b8ca8; pointer-events: none; }
+.galaxy-stats b { font-size: 17px; font-weight: 500; color: #c1cee4; margin-right: 3px; }
+.galaxy-stats > i { width: 1px; height: 17px; background: #2b3650; }
+.galaxy-three-badge { padding: 4px 5px; border: 1px solid #485e85; border-radius: 4px; color: #b0c7f0; font-size: 9px; }
+.galaxy-focus-card { position: absolute; top: 90px; right: 22px; width: 235px; padding: 15px; border: 1px solid #2c3c57; border-radius: 11px; background: #101b2ee8; backdrop-filter: blur(12px); box-shadow: 0 12px 30px #0003; }
+.galaxy-focus-card > div:first-child { display: flex; align-items: center; gap: 6px; }
+.galaxy-focus-card small { flex: 1; color: #8f9fba; font-size: 10px; }
+.galaxy-focus-card > div > button { background: transparent; border: 0; padding: 0; display: flex; cursor: pointer; color: #788ba9; }
+.galaxy-focus-card > strong { display: block; font-size: 13px; line-height: 1.6; font-weight: 500; margin-top: 11px; overflow-wrap: anywhere; color: #e1e9f7; }
+.galaxy-focus-card > p { font-size: 11px; color: #8b9bb6; margin: 6px 0 14px; }
+.galaxy-focus-actions { display: flex; align-items: center; gap: 7px; }
+.galaxy-focus-actions button { display: flex; align-items: center; gap: 5px; cursor: pointer; border: 1px solid #374866; background: #21304b; color: #c7d7f1; border-radius: 6px; padding: 7px 9px; font: inherit; font-size: 11px; white-space: nowrap; }
+.galaxy-focus-actions select { width: 128px; font-size: 10px; padding: 6px; min-height: 31px; }
+.galaxy-legend { display: flex; flex-wrap: wrap; gap: 10px 15px; position: absolute; left: 27px; bottom: 61px; right: 30px; max-width: 750px; pointer-events: none; }
+.galaxy-legend span { display: flex; align-items: center; gap: 6px; font-size: 10px; color: #8c9db9; }
+.galaxy-legend i { width: 5px; height: 5px; }
+.galaxy-navigation { display: flex; align-items: center; justify-content: center; gap: 9px; position: absolute; bottom: 19px; left: 50%; transform: translateX(-50%); padding: 8px 15px; border: 1px solid #243149; border-radius: 30px; color: #8b9cb8; background: #111c2bd9; backdrop-filter: blur(10px); font-size: 10px; white-space: nowrap; pointer-events: none; }
+.galaxy-navigation > i { width: 2px; height: 2px; background: #50617d; border-radius: 50%; }
+.galaxy-empty { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 25px; color: #7e94b6; }
+.galaxy-empty > svg { color: #94a6e9; margin-bottom: 7px; }
+.galaxy-empty h3 { margin: 13px 0 6px; font-weight: 500; font-size: 18px; color: #d6e0f1; }
+.galaxy-empty p { max-width: 390px; color: #8394af; font-size: 12px; line-height: 1.9; }
+.galaxy-empty button { margin-top: 12px; cursor: pointer; background: #243558; color: #d2def5; border: 1px solid #4a5f87; padding: 8px 14px; border-radius: 6px; font: inherit; font-size: 12px; }
+.galaxy-toast { position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); background: #203454ee; color: #d0e0f9; border: 1px solid #536b99; border-radius: 8px; padding: 9px 16px; font-size: 12px; box-shadow: 0 6px 20px #0004; pointer-events: none; }
+@media (max-width: 1050px) { .galaxy-toolbar { gap: 8px; }.galaxy-search { width: 190px; }.galaxy-toolbar-end button { padding: 0 8px; }.galaxy-toolbar-end button span { display: none; }.galaxy-map-heading h2 { font-size: 15px; }.galaxy-map-heading { left: 20px; }.galaxy-stats { right: 18px; } }
+@media (max-width: 700px) { .galaxy-search { width: auto; flex: 1; }.galaxy-toolbar > select { max-width: 165px; }.galaxy-canvas { min-height: 540px; height: 65vh; }.galaxy-map-heading h2 { font-size: 13px; }.galaxy-map-heading p { font-size: 10px; }.galaxy-stats { top: 93px; left: 20px; right: auto; }.galaxy-focus-card { top: 135px; right: 15px; width: 200px; }.galaxy-navigation { font-size: 9px; padding: 8px 10px; gap: 6px; }.galaxy-toolbar-end { margin-left: auto; }.galaxy-legend { left: 20px; } }
