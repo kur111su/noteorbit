@@ -273,7 +273,7 @@ class Repository {
 }
 
 function smallPdf() {
-  const stream='BT /F1 22 Tf 50 770 Td (Knowledge Galaxy - Sample Exam) Tj 0 -42 Td /F1 12 Tf (Grade 7 Mathematics / Linear Equations) Tj 0 -32 Td (1. Solve: 3x + 5 = 20) Tj 0 -26 Td (2. Solve: 2x - 7 = 9) Tj 0 -26 Td (3. Explain your reasoning in a linked note.) Tj ET';
+  const stream='BT /F1 22 Tf 50 770 Td (NoteOrbit - Sample Exam) Tj 0 -42 Td /F1 12 Tf (Grade 7 Mathematics / Linear Equations) Tj 0 -32 Td (1. Solve: 3x + 5 = 20) Tj 0 -26 Td (2. Solve: 2x - 7 = 9) Tj 0 -26 Td (3. Explain your reasoning in a linked note.) Tj ET';
   const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',`<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`];
   let body='%PDF-1.4\n',offsets=[0]; objects.forEach((o,i)=>{offsets.push(Buffer.byteLength(body));body+=`${i+1} 0 obj\n${o}\nendobj\n`;}); const xref=Buffer.byteLength(body); body+=`xref\n0 6\n0000000000 65535 f \n${offsets.slice(1).map(n=>String(n).padStart(10,'0')+' 00000 n \n').join('')}trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`; return body;
 }

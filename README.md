@@ -1,10 +1,12 @@
-# 知识星系
+# NoteOrbit
 
-一个供个人电脑本地使用的教学资料管理应用。文件保存在普通文件夹中，分类、标签和关联保存在本地 SQLite 数据库中。独立的 3D 星系可以旋转、平移、缩放，沿着关联浏览资料。
+NoteOrbit（知识星系）是一个供个人电脑本地使用的教学资料管理应用。文件保存在普通文件夹中，分类、标签和关联保存在本地 SQLite 数据库中。独立的 3D 星系可以旋转、平移、缩放，沿着关联浏览资料。
 
 ## 直接体验
 
-Windows 64 位用户双击 `启动知识星系.cmd`，或运行 `release/KnowledgeGalaxy-0.2.0-x64.exe`。首次运行会打开带有 20 份真实文件的示例资料库，其中包含测试用 PDF 和 Markdown 练习、笔记。示例内容用于体验功能。
+Windows 64 位用户双击 `启动NoteOrbit.cmd`，或运行 `release/NoteOrbit-0.2.1-x64.exe`。首次运行会打开带有 20 份真实文件的示例资料库，其中包含测试用 PDF 和 Markdown 练习、笔记。示例内容用于体验功能。
+
+更新前先关闭旧版程序。NoteOrbit 会沿用旧版桌面设置和资料库选择；已有文件、分类、标签、关联和备份保持兼容。源码项目目录为 `noteorbit`。
 
 1. 点击左上角资料库名称，选择自己的资料文件夹，也可以新建空文件夹。
 2. 点击“导入文件”，将资料复制到当前资料库；同内容文件会自动跳过。
@@ -17,7 +19,7 @@ Windows 64 位用户双击 `启动知识星系.cmd`，或运行 `release/Knowled
 
 ## 当前已经实现
 
-0.2 版采用白色界面、浅灰侧栏与少量紫色强调。移除英文眉题、口号和重复筛选，列表与图谱使用紧凑工具栏；属性、标签和分类选项按需展开。
+0.2.1 版统一使用 NoteOrbit 名称与轨道图标，保留白色界面、浅灰侧栏与少量紫色强调。列表与图谱使用紧凑工具栏，属性、标签和分类选项按需展开。
 
 - 本地文件夹资料库，支持 PDF、Word（doc/docx）、Markdown、TXT、PNG/JPG/GIF/WebP。
 - 文件列表、文件夹/类型/分类/标签筛选，以及资料名称、标签和关联节点搜索。
@@ -73,6 +75,7 @@ src/components/GalaxyView.tsx      Three.js / force-graph 3D 星系
 src/components/DocumentPreview.tsx PDF.js、图片与笔记预览
 electron/preload.cjs                受控桌面桥接
 electron/main.cjs                   窗口、文件对话框与安全 IPC
+electron/identity.cjs               应用标识与旧版设置兼容
 electron/repository.cjs             SQLite、文件、导入、备份和恢复
 tests/backend.test.cjs              数据与文件完整性测试
 ```
@@ -88,6 +91,8 @@ flowchart LR
 ```
 
 每个资料库中的 `.galaxy/catalog.sqlite` 保存分类、标签、知识节点、关系和布局；回收文件放在 `.galaxy/trash`。文档采用稳定 UUID 和库内相对路径，便于整体移动和备份。
+
+旧版资料目录、备份格式标识和浏览器缓存键继续保留，避免更名影响已保存的数据。新安装的桌面设置目录使用 NoteOrbit。
 
 Electron 使用进程隔离、渲染器沙箱、受控 IPC 和路径校验。写入异常会回滚本次数据库与文件操作；这不等于具备完整的断电恢复日志。
 

@@ -3,7 +3,7 @@ import {
   ArrowDownToLine, ArrowUpRight, BookOpen, Check, ChevronDown, ChevronRight,
   CircleHelp, FileImage, FileText, Folder, FolderOpen, GitBranch,
   HardDrive, Layers3, Link2, LoaderCircle, MoreHorizontal, Network, Plus, RotateCcw,
-  Search, Settings2, Sparkles, Trash2, Upload, X,
+  Search, Settings2, Orbit, Trash2, Upload, X,
 } from 'lucide-react';
 import { api } from './api';
 import type { DocumentKind, Facet, FacetType, FacetValue, LibraryCommand, LibraryDocument, WorkspaceState } from './domain';
@@ -145,7 +145,7 @@ export default function App() {
     void command({ type: 'update-document', id: document.id, patch: { values: { ...document.values, [facet.id]: value } } });
   }
 
-  if (!state) return <div className="loading-screen"><Sparkles size={28} /><h1>知识星系</h1><p>{toast?.error ? toast.text : '正在打开资料库…'}</p>{!toast?.error && <LoaderCircle className="spin" size={20} />}</div>;
+  if (!state) return <div className="loading-screen"><Orbit size={28} /><h1>NoteOrbit</h1><p>{toast?.error ? toast.text : '正在打开资料库…'}</p>{!toast?.error && <LoaderCircle className="spin" size={20} />}</div>;
 
   const pageTitles: Record<Page, string> = { documents: '资料库', galaxy: '星系', organize: '分类与标签', trash: '回收站' };
   const detailVisible = page !== 'organize' && Boolean(selectedDocument || selectedKnowledge || selectedTag || selectedOption);
@@ -154,7 +154,7 @@ export default function App() {
   return <div className={`app-shell ${mobileNav ? 'nav-visible' : ''}`}>
     {mobileNav && <button className="nav-scrim" aria-label="关闭导航" onClick={() => setMobileNav(false)} />}
     <aside className="sidebar">
-      <div className="brand"><Sparkles size={21} strokeWidth={1.6} /><span>知识星系</span></div>
+      <div className="brand"><Orbit size={21} strokeWidth={1.6} /><span>NoteOrbit</span></div>
       <button className="library-switch" disabled={busy} onClick={() => void perform(() => api.chooseLibrary(), '资料库已打开', true)} title={state.library.path}>
         <FolderOpen size={17} /><span><strong>{state.library.name}</strong><small>{state.library.mode === 'demo' ? '浏览器示例' : state.library.isExample ? '本地示例库' : '本地资料库'}</small></span><ChevronDown size={14} />
       </button>

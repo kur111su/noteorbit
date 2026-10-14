@@ -5,11 +5,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { Repository, createExample, EXTENSIONS } = require('./repository.cjs');
+const { PRODUCT_NAME, packagedUserDataPath } = require('./identity.cjs');
 
 const projectRoot = path.resolve(__dirname, '..');
+app.setName(PRODUCT_NAME);
 const testDataHome = !app.isPackaged && process.env.GALAXY_DATA_HOME;
 if (testDataHome && !path.isAbsolute(testDataHome)) throw new Error('GALAXY_DATA_HOME must be an absolute path');
-if (!app.isPackaged) app.setPath('userData', testDataHome || path.join(projectRoot, '.runtime', 'appdata'));
+app.setPath('userData', app.isPackaged ? packagedUserDataPath(app.getPath('appData')) : testDataHome || path.join(projectRoot, '.runtime', 'appdata'));
 const hiddenTest = !app.isPackaged && process.env.GALAXY_TEST_HIDDEN === '1';
 const devUrl = !app.isPackaged && process.env.GALAXY_DEV_URL;
 if (devUrl && !/^http:\/\/127\.0\.0\.1:\d+\/?$/.test(devUrl)) throw new Error('Invalid development URL');
@@ -55,17 +57,17 @@ function registerIpc() {
   register('galaxy:open-document', async key => { const error = await shell.openPath(repository.openPath(boundedId(key))); if (error) throw new Error('无法打开该文件，请检查本机是否安装对应应用'); });
   register('galaxy:backup', async () => {
     const stamp = new Date().toISOString().slice(0, 10);
-    const result = await dialog.showSaveDialog(window, { title: '保存完整资料库备份', defaultPath: path.join(app.getPath('documents'), `知识星系备份-${stamp}.zip`), filters: [{ name: '知识星系备份', extensions: ['zip'] }] });
+    const result = await dialog.showSaveDialog(window, { title: '保存完整资料库备份', defaultPath: path.join(app.getPath('documents'), `NoteOrbit-backup-${stamp}.zip`), filters: [{ name: 'NoteOrbit 备份', extensions: ['zip'] }] });
     if (result.canceled || !result.filePath) return null;
     return repository.backup(result.filePath);
   });
   register('galaxy:restore-backup', async () => {
-    const archive = await dialog.showOpenDialog(window, { title: '选择知识星系备份', properties: ['openFile'], filters: [{ name: '知识星系备份', extensions: ['zip'] }] });
+    const archive = await dialog.showOpenDialog(window, { title: '选择 NoteOrbit 备份', properties: ['openFile'], filters: [{ name: 'NoteOrbit 备份', extensions: ['zip'] }] });
     if (archive.canceled || !archive.filePaths[0]) return null;
     const parent = await dialog.showOpenDialog(window, { title: '选择恢复位置（会创建新的资料库文件夹）', properties: ['openDirectory', 'createDirectory'] });
     if (parent.canceled || !parent.filePaths[0]) return null;
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const destination = path.join(parent.filePaths[0], `知识星系恢复-${stamp}`);
+    const destination = path.join(parent.filePaths[0], `NoteOrbit-restored-${stamp}`);
     return useRepository(await Repository.restoreBackup(archive.filePaths[0], destination));
   });
 }
@@ -76,7 +78,7 @@ async function initializeRepository() {
   repository = await createExample(exampleRoot); rememberLibrary();
 }
 async function createWindow() {
-  window = new BrowserWindow({ width: 1520, height: 980, minWidth: 1080, minHeight: 720, show: false, title: '知识星系', backgroundColor: '#ffffff', autoHideMenuBar: true, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, allowRunningInsecureContent: false } });
+  window = new BrowserWindow({ width: 1520, height: 980, minWidth: 1080, minHeight: 720, show: false, title: PRODUCT_NAME, backgroundColor: '#ffffff', autoHideMenuBar: true, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, allowRunningInsecureContent: false } });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', event => event.preventDefault());
   window.webContents.on('will-attach-webview', event => event.preventDefault());
@@ -90,7 +92,7 @@ if (acquired) {
     session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
     session.defaultSession.setPermissionCheckHandler(() => false);
     await initializeRepository(); registerIpc(); await createWindow();
-  }).catch(error => { dialog.showErrorBox('知识星系无法启动', error.message); app.quit(); });
+  }).catch(error => { dialog.showErrorBox('NoteOrbit 无法启动', error.message); app.quit(); });
   app.on('activate', () => { if (!window && repository) createWindow(); });
   app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
   app.on('before-quit', () => { try { repository?.persist(); } catch (error) { console.error(error); } });

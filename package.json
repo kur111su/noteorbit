@@ -1,6 +1,6 @@
 {
-  "name": "knowledge-galaxy",
-  "version": "0.2.0",
+  "name": "noteorbit",
+  "version": "0.2.1",
   "private": true,
   "description": "本地教学资料管理与 3D 知识星系",
   "license": "UNLICENSED",
@@ -18,8 +18,8 @@
     "package:win": "pnpm build && node node_modules/electron/install.js && electron-builder --win portable --config.electronDist=node_modules/electron/dist"
   },
   "build": {
-    "appId": "local.knowledge-galaxy.app",
-    "productName": "知识星系",
+    "appId": "local.noteorbit.app",
+    "productName": "NoteOrbit",
     "directories": {
       "output": "release"
     },
@@ -32,7 +32,7 @@
       "target": "portable",
       "icon": "build/icon.ico",
       "signExecutable": false,
-      "artifactName": "KnowledgeGalaxy-${version}-${arch}.${ext}"
+      "artifactName": "NoteOrbit-${version}-${arch}.${ext}"
     }
   },
   "dependencies": {

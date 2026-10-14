@@ -42,7 +42,7 @@ export function createDemoState(): WorkspaceState {
     const id = `doc-${i + 1}`;
     const doc: LibraryDocument = { id, title, path: `${kind === '笔记' || kind === '解析' ? '笔记' : '试卷'}/${title}.${extension}`, extension, kind, size: extension === 'pdf' ? 1100 : 500, updatedAt: today, tagIds: [...tagIds], values: { grade, subject: 'math', chapter: [...chapters], difficulty: i % 3 ? 'basic' : 'advanced', year: 2026 } };
     state.documents.push(doc);
-    notes.set(id, `# ${title}\n\n这是知识星系的示例笔记，用于体验本地资料整理与关联浏览。\n\n## 重点\n\n- 梳理章节中的核心概念。\n- 对照试卷记录解题方法。\n- 用分类、标签和关联串起相关资料。\n\n你可以编辑这段内容并保存。\n`);
+    notes.set(id, `# ${title}\n\n这是 NoteOrbit 的示例笔记，用于体验本地资料整理与关联浏览。\n\n## 重点\n\n- 梳理章节中的核心概念。\n- 对照试卷记录解题方法。\n- 用分类、标签和关联串起相关资料。\n\n你可以编辑这段内容并保存。\n`);
   });
   const rel = (source: string, target: string, typeId: string) => state.relations.push({ id: `rel-${state.relations.length + 1}`, source, target, typeId });
   rel('equations', 'knowledge-equality', 'contains'); rel('equations', 'knowledge-application', 'contains');
@@ -66,7 +66,7 @@ async function fileDB() { return await new Promise<IDBDatabase>((resolve, reject
 async function putFile(key: string, value: ReadDocumentResult) { const db = await fileDB(); await new Promise<void>((resolve, reject) => { const tx = db.transaction('files', 'readwrite'); tx.objectStore('files').put(value, key); tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); }); db.close(); }
 async function getFile(key: string) { const db = await fileDB(); const value = await new Promise<ReadDocumentResult | undefined>((resolve, reject) => { const request = db.transaction('files').objectStore('files').get(key); request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); }); db.close(); return value; }
 function pdf(): string {
-  const stream = 'BT /F1 24 Tf 64 740 Td (Knowledge Galaxy) Tj 0 -40 Td /F1 14 Tf (Example teaching document) Tj 0 -32 Td (Local PDF preview is ready.) Tj 0 -24 Td (This sample is for application testing.) Tj ET';
+  const stream = 'BT /F1 24 Tf 64 740 Td (NoteOrbit) Tj 0 -40 Td /F1 14 Tf (Example teaching document) Tj 0 -32 Td (Local PDF preview is ready.) Tj 0 -24 Td (This sample is for application testing.) Tj ET';
   const objects = ['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`];
   let content = '%PDF-1.4\n'; const offsets = [0];
   objects.forEach((object, index) => { offsets.push(content.length); content += `${index + 1} 0 obj\n${object}\nendobj\n`; });
