@@ -6,7 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { PRODUCT_NAME, packagedUserDataPath } = require('../electron/identity.cjs');
 
-test('the new brand keeps existing settings and selects NoteOrbit for new installs', t => {
+test('the new brand keeps existing settings and selects NoteOrbit for new installs', (t) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'noteorbit-identity-'));
   t.after(() => {
     const absolute = path.resolve(root);

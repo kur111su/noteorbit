@@ -1,12 +1,14 @@
 {
   "name": "noteorbit",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "本地教学资料管理与 3D 知识星系",
   "license": "UNLICENSED",
   "type": "module",
   "packageManager": "pnpm@11.25.0",
-  "engines": { "node": ">=22.12.0" },
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -14,8 +16,11 @@
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit && vite build",
     "start": "electron .",
-    "test": "node --test tests/*.test.cjs",
-    "package:win": "pnpm build && node node_modules/electron/install.js && electron-builder --win portable --config.electronDist=node_modules/electron/dist"
+    "test": "node --experimental-strip-types --test tests/*.test.cjs tests/*.test.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm format:check && pnpm typecheck && pnpm test",
+    "package:win": "pnpm build && node node_modules/electron/install.js && electron-builder --win portable --x64 --config.electronDist=node_modules/electron/dist"
   },
   "build": {
     "appId": "local.noteorbit.app",
@@ -40,19 +45,20 @@
     "sql.js": "^1.14.2"
   },
   "devDependencies": {
-    "lucide-react": "^1.55.0",
-    "pdfjs-dist": "^6.4.299",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "react-force-graph-3d": "^1.29.2",
-    "three": "^0.186.1",
-    "three-spritetext": "^1.10.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "^6.1.2",
     "electron": "^44.7.0",
     "electron-builder": "^26.15.3",
+    "lucide-react": "^1.55.0",
+    "pdfjs-dist": "^6.4.299",
+    "prettier": "^3.9.10",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-force-graph-3d": "^1.29.2",
+    "three": "^0.186.1",
+    "three-spritetext": "^1.10.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"
   }
