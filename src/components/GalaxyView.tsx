@@ -1,7 +1,7 @@
 import { Component, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import ForceGraph3D, { type ForceGraphMethods, type NodeObject } from 'react-force-graph-3d';
 import SpriteText from 'three-spritetext';
-import { AdditiveBlending, BufferGeometry, CanvasTexture, Color, Float32BufferAttribute, Group, Mesh, MeshBasicMaterial, Points, PointsMaterial, SphereGeometry, Sprite, SpriteMaterial } from 'three';
+import { Group, Mesh, MeshBasicMaterial, SphereGeometry } from 'three';
 import { Focus, Maximize2, Move3D, RotateCcw, Save, Search, Sparkles, X } from 'lucide-react';
 import type { WorkspaceState } from '../domain';
 import './GalaxyView.css';
@@ -14,16 +14,16 @@ type GalaxyNode = {
   fx?: number; fy?: number; fz?: number;
 };
 type GalaxyLink = { id: string; source: string | NodeObject<GalaxyNode>; target: string | NodeObject<GalaxyNode>; name: string; derived: boolean };
-type NodeVisual = { group: Group; core: Mesh<SphereGeometry, MeshBasicMaterial>; aura: Sprite; label?: SpriteText; node: NodeObject<GalaxyNode> };
+type NodeVisual = { group: Group; core: Mesh<SphereGeometry, MeshBasicMaterial>; halo: Mesh<SphereGeometry, MeshBasicMaterial>; label?: SpriteText; node: NodeObject<GalaxyNode> };
 type Props = {
   state: WorkspaceState; visibleDocumentIds?: string[]; selectedId?: string;
   onSelect: (id: string) => void;
   onSaveLayout?: (positions: Record<string, Position>) => void | Promise<void | boolean>;
 };
 
-const PALETTE = ['#8b9dff', '#4cd5c3', '#f0bc76', '#c397f9', '#ef8aab', '#6abafa', '#b1d77c', '#e5a17c'];
-const KIND_COLORS: Record<GalaxyNode['kind'], string> = { document: '#8b9dff', knowledge: '#60d7c8', facet: '#e6bb7c', tag: '#c99cf5' };
-const KIND_LABELS: Record<GalaxyNode['kind'], string> = { document: '文档', knowledge: '知识节点', facet: '分类选项', tag: '标签' };
+const PALETTE = ['#8c78c6', '#6f9ec2', '#62a69c', '#c79b65', '#b77e9b', '#8897bc', '#91a773', '#b48b75'];
+const KIND_COLORS: Record<GalaxyNode['kind'], string> = { document: '#8c78c6', knowledge: '#62a69c', facet: '#c79b65', tag: '#6f9ec2' };
+const KIND_LABELS: Record<GalaxyNode['kind'], string> = { document: '文档', knowledge: '知识', facet: '分类', tag: '标签' };
 const finitePosition = (node: Partial<Position>): node is Position => Number.isFinite(node.x) && Number.isFinite(node.y) && Number.isFinite(node.z);
 const endpointId = (endpoint: GalaxyLink['source']) => typeof endpoint === 'string' ? endpoint : endpoint.id;
 const safeText = (value: string) => value.replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]!));
@@ -48,7 +48,7 @@ class GraphBoundary extends Component<{ children: ReactNode; onRetry: () => void
   static getDerivedStateFromError() { return { failed: true }; }
   componentDidCatch() { this.props.onFailure(); }
   render() {
-    return this.state.failed ? <div className="galaxy-empty"><Move3D size={32} /><h3>3D 视图暂时无法启动</h3><p>请确认设备支持 WebGL 2，并开启应用的硬件加速。文件和关联数据仍可在资料库中使用。</p><button type="button" onClick={this.props.onRetry}>重新加载 3D 视图</button></div> : this.props.children;
+    return this.state.failed ? <div className="galaxy-empty"><Move3D size={24} /><h3>无法显示图谱</h3><p>请开启硬件加速，并确认设备支持 WebGL 2。</p><button type="button" onClick={this.props.onRetry}>重试</button></div> : this.props.children;
   }
 }
 
@@ -201,7 +201,7 @@ export default function GalaxyView({ state, visibleDocumentIds, selectedId, onSe
   const emphasized = hoverId || focusId;
   const emphasizedIds = useMemo(() => new Set(emphasized ? [emphasized, ...(fullGraph.neighbors.get(emphasized) || [])] : []), [emphasized, fullGraph]);
   const searchResults = query.trim() ? fullGraph.nodes.filter(node => `${node.title} ${node.subtitle}`.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 7) : [];
-  const importantIds = useMemo(() => new Set(fullGraph.nodes.filter(node => node.kind !== 'document' && node.degree >= 2).sort((a, b) => b.degree - a.degree).slice(0, 10).map(node => node.id)), [fullGraph]);
+  const importantIds = useMemo(() => new Set(fullGraph.nodes.filter(node => node.kind !== 'document' && node.degree >= 2).sort((a, b) => b.degree - a.degree).slice(0, 8).map(node => node.id)), [fullGraph]);
   const visualStateRef = useRef({ emphasized, emphasizedIds, importantIds });
   visualStateRef.current = { emphasized, emphasizedIds, importantIds };
 
@@ -236,8 +236,37 @@ export default function GalaxyView({ state, visibleDocumentIds, selectedId, onSe
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     const canvas = renderer.domElement;
     const handleLoss = (event: Event) => { event.preventDefault(); setWebgl(false); };
+    const ownerDocument = canvas.ownerDocument;
+    let activePointer: { id: number; type: string; x: number; y: number; updatedAt: number } | undefined;
+    let normalizingPointer = false;
+    const rememberPointer = (event: PointerEvent) => {
+      if (event.isTrusted) activePointer = { id: event.pointerId, type: event.pointerType, x: event.clientX, y: event.clientY, updatedAt: performance.now() };
+    };
+    const updatePointer = (event: PointerEvent) => { if (event.isTrusted && activePointer?.id === event.pointerId) rememberPointer(event); };
+    const releasePointer = (event: PointerEvent) => { if (event.isTrusted && activePointer?.id === event.pointerId) activePointer = undefined; };
+    const normalizePointerUp = (event: PointerEvent) => {
+      if (event.isTrusted) { updatePointer(event); return; }
+      if (normalizingPointer || event.target !== ownerDocument || event.bubbles || event.pointerId !== 0 || event.pointerType !== 'touch' || !activePointer || performance.now() - activePointer.updatedAt > 5000) return;
+      // 3d-force-graph's dragend omits pointerId; Three 0.186 OrbitControls needs the real pointer to end its gesture.
+      event.stopImmediatePropagation();
+      normalizingPointer = true;
+      try { ownerDocument.dispatchEvent(new PointerEvent('pointerup', { pointerId: activePointer.id, pointerType: activePointer.type, clientX: activePointer.x, clientY: activePointer.y })); }
+      finally { normalizingPointer = false; }
+    };
     canvas.addEventListener('webglcontextlost', handleLoss);
-    return () => canvas.removeEventListener('webglcontextlost', handleLoss);
+    canvas.addEventListener('pointerdown', rememberPointer, true);
+    canvas.addEventListener('pointermove', updatePointer, true);
+    ownerDocument.addEventListener('pointerup', normalizePointerUp, true);
+    ownerDocument.addEventListener('pointerup', releasePointer);
+    ownerDocument.addEventListener('pointercancel', releasePointer);
+    return () => {
+      canvas.removeEventListener('webglcontextlost', handleLoss);
+      canvas.removeEventListener('pointerdown', rememberPointer, true);
+      canvas.removeEventListener('pointermove', updatePointer, true);
+      ownerDocument.removeEventListener('pointerup', normalizePointerUp, true);
+      ownerDocument.removeEventListener('pointerup', releasePointer);
+      ownerDocument.removeEventListener('pointercancel', releasePointer);
+    };
   }, [graphData, groupBy, webgl, retryKey]);
 
   // A focus change inside a local graph must not be followed by an automatic full-map zoom.
@@ -247,54 +276,25 @@ export default function GalaxyView({ state, visibleDocumentIds, selectedId, onSe
     return () => window.clearTimeout(fitTimerRef.current);
   }, [topologyKey, groupBy, layoutRevision, depth, libraryIdentity, webgl, retryKey]);
 
-  useEffect(() => {
-    const graph = graphRef.current;
-    if (!graph || !webgl || !graphData.nodes.length) return;
-    const geometry = new BufferGeometry();
-    const coordinates: number[] = [];
-    for (let index = 0; index < 650; index++) {
-      const point = seedPosition(`ambient:${index}`, 750 + hash(`radius:${index}`) / 4294967296 * 700);
-      coordinates.push(point.x, point.y, point.z);
-    }
-    geometry.setAttribute('position', new Float32BufferAttribute(coordinates, 3));
-    const material = new PointsMaterial({ color: '#abc0e8', size: 1.2, transparent: true, opacity: 0.34, sizeAttenuation: true, depthWrite: false });
-    const stars = new Points(geometry, material);
-    stars.userData.ambientStars = true;
-    graph.scene().add(stars);
-    return () => { graph.scene().remove(stars); geometry.dispose(); material.dispose(); };
-  }, [webgl, retryKey, graphData.nodes.length > 0]);
-
-  const glowTexture = useMemo(() => {
-    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 64;
-    const context = canvas.getContext('2d');
-    if (context) {
-      const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
-      gradient.addColorStop(0, 'rgba(255,255,255,0.9)'); gradient.addColorStop(0.12, 'rgba(255,255,255,0.65)'); gradient.addColorStop(0.38, 'rgba(255,255,255,0.12)'); gradient.addColorStop(1, 'rgba(255,255,255,0)');
-      context.fillStyle = gradient; context.fillRect(0, 0, 64, 64);
-    }
-    return new CanvasTexture(canvas);
-  }, []);
-  useEffect(() => () => glowTexture.dispose(), [glowTexture]);
-
   const updateNodeVisual = useCallback((visual: NodeVisual) => {
     const { emphasized: currentId, emphasizedIds: activeIds, importantIds: hubs } = visualStateRef.current;
-    const { node, core, aura, group } = visual;
+    const { node, core, halo, group } = visual;
     const active = activeIds.has(node.id);
     const faded = !!currentId && !active;
-    const radius = (node.kind === 'document' ? 1.35 : 1.9) + Math.min(node.degree, 12) * 0.09;
-    core.scale.setScalar(radius); core.material.color.set(node.color); core.material.opacity = faded ? 0.22 : 1;
-    aura.material.color.set(node.color); aura.material.opacity = faded ? 0.12 : active ? 0.95 : 0.63; aura.scale.setScalar(radius * (active ? 12 : 8));
+    const radius = (node.kind === 'document' ? 1.6 : 1.9) + Math.min(node.degree, 12) * 0.08;
+    core.scale.setScalar(radius * (node.id === currentId ? 1.1 : 1)); core.material.color.set(node.color); core.material.opacity = faded ? 0.24 : 1;
+    halo.visible = node.id === currentId; halo.material.color.set(node.color); halo.scale.setScalar(radius * 1.9);
     const showLabel = node.id === currentId || (!currentId && hubs.has(node.id));
     if (showLabel) {
       const labelKey = `${node.title}:${node.id === currentId}`;
-      if (!visual.label) { visual.label = new SpriteText(); visual.label.fontFace = 'Microsoft YaHei, sans-serif'; visual.label.backgroundColor = '#0a1124'; visual.label.padding = [1.5, 2.5]; visual.label.borderRadius = 2; group.add(visual.label); }
+      if (!visual.label) { visual.label = new SpriteText(); visual.label.fontFace = 'Microsoft YaHei, sans-serif'; visual.label.backgroundColor = '#ffffff'; visual.label.padding = [0.8, 1.5]; visual.label.borderRadius = 1; group.add(visual.label); }
       if (visual.label.userData.labelKey !== labelKey) {
         visual.label.text = node.title.length > 22 ? `${node.title.slice(0, 22)}…` : node.title;
-        visual.label.textHeight = node.id === currentId ? 4.3 : 3.3;
-        visual.label.color = node.id === currentId ? '#f2f6ff' : '#a3b5d5';
+        visual.label.textHeight = node.id === currentId ? 4.3 : 3.9;
+        visual.label.color = node.id === currentId ? '#3d354c' : '#625d6b';
         visual.label.userData.labelKey = labelKey;
       }
-      visual.label.position.set(0, -(radius + 4.5), 0);
+      visual.label.position.set(0, -(radius + 3.7), 0);
     } else if (visual.label) {
       group.remove(visual.label); visual.label.material.map?.dispose(); visual.label.material.dispose(); visual.label = undefined;
     }
@@ -302,13 +302,14 @@ export default function GalaxyView({ state, visibleDocumentIds, selectedId, onSe
   // Keep this accessor stable: changing it makes the graph library rebuild every WebGL node.
   const nodeObject = useCallback((node: NodeObject<GalaxyNode>) => {
     const group = new Group();
-    const core = new Mesh(new SphereGeometry(1, 10, 8), new MeshBasicMaterial({ color: new Color(node.color), transparent: true }));
-    const aura = new Sprite(new SpriteMaterial({ map: glowTexture, color: node.color, transparent: true, blending: AdditiveBlending, depthWrite: false }));
-    group.add(core, aura);
-    const visual: NodeVisual = { group, core, aura, node };
+    const core = new Mesh(new SphereGeometry(1, 12, 10), new MeshBasicMaterial({ color: node.color, transparent: true }));
+    const halo = new Mesh(new SphereGeometry(1, 12, 10), new MeshBasicMaterial({ color: node.color, transparent: true, opacity: 0.1, depthWrite: false }));
+    halo.renderOrder = -1;
+    group.add(halo, core);
+    const visual: NodeVisual = { group, core, halo, node };
     nodeVisualsRef.current.set(node.id, visual); updateNodeVisual(visual);
     return group;
-  }, [glowTexture, updateNodeVisual]);
+  }, [updateNodeVisual]);
   useEffect(() => {
     const visibleNodes = new Map(graphData.nodes.map(node => [node.id, node]));
     for (const [id, visual] of nodeVisualsRef.current) {
@@ -350,32 +351,30 @@ export default function GalaxyView({ state, visibleDocumentIds, selectedId, onSe
 
   return <section className="galaxy-view" aria-label="3D 知识星系">
     <div className="galaxy-toolbar">
-      <div className="galaxy-search"><Search size={15} /><input aria-label="搜索星系节点" value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && searchResults[0]) focusOn(searchResults[0]); if (event.key === 'Escape') setQuery(''); }} placeholder="寻找一个星点…" />{query && <button type="button" aria-label="清空搜索" onClick={() => setQuery('')}><X size={14} /></button>}
+      <div className="galaxy-search"><Search size={14} /><input aria-label="搜索星系节点" value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && searchResults[0]) focusOn(searchResults[0]); if (event.key === 'Escape') setQuery(''); }} placeholder="搜索节点" />{query && <button type="button" aria-label="清空搜索" onClick={() => setQuery('')}><X size={13} /></button>}
         {query.trim() && <div className="galaxy-search-results">{searchResults.length ? searchResults.map(node => <button type="button" key={node.id} onClick={() => focusOn(node)}><i style={{ background: node.color }} /><span>{node.title}<small>{node.subtitle}</small></span><Focus size={14} /></button>) : <p>没有找到相关节点</p>}</div>}
       </div>
-      <select aria-label="星团分组方式" value={groupBy} onChange={event => { pinnedIdsRef.current.clear(); setGroupBy(event.target.value); setSavedMessage(''); }}><option value="connections">按关联自然排列</option>{state.facets.filter(facet => facet.options.length).map(facet => <option key={facet.id} value={`facet:${facet.id}`}>按{facet.name}聚集</option>)}<option value="tags">按标签聚集</option></select>
+      <select aria-label="星团分组方式" value={groupBy} onChange={event => { pinnedIdsRef.current.clear(); setGroupBy(event.target.value); setSavedMessage(''); }} title="分组只改变布局和颜色"><option value="connections">自然布局</option>{state.facets.filter(facet => facet.options.length).map(facet => <option key={facet.id} value={`facet:${facet.id}`}>按{facet.name}</option>)}<option value="tags">按标签</option></select>
       <div className="galaxy-display-toggles"><label><input type="checkbox" checked={showFacets} onChange={event => setShowFacets(event.target.checked)} />分类</label><label><input type="checkbox" checked={showTags} onChange={event => setShowTags(event.target.checked)} />标签</label></div>
-      <div className="galaxy-toolbar-end"><button type="button" title="查看整个星系" onClick={() => { setDepth('all'); setFocusId(undefined); setHoverId(undefined); graphRef.current?.zoomToFit(900, 70); }}><Maximize2 size={15} /><span>全图</span></button><button type="button" title="释放固定节点并重新排列" onClick={resetLayout}><RotateCcw size={15} /><span>重排</span></button>{onSaveLayout && <button type="button" onClick={() => void saveLayout()} disabled={!graphData.nodes.length || !webgl || saving}><Save size={15} /><span>{saving ? '保存中…' : '保存布局'}</span></button>}</div>
+      <div className="galaxy-toolbar-end"><button type="button" title="查看全图" onClick={() => { setDepth('all'); setFocusId(undefined); setHoverId(undefined); graphRef.current?.zoomToFit(900, 70); }}><Maximize2 size={14} /><span>全图</span></button><button type="button" title="重新布局" onClick={resetLayout}><RotateCcw size={14} /><span>重排</span></button>{onSaveLayout && <button type="button" title="保存布局" onClick={() => void saveLayout()} disabled={!graphData.nodes.length || !webgl || saving}><Save size={14} /><span>{saving ? '保存中…' : '保存布局'}</span></button>}</div>
     </div>
     <div className="galaxy-canvas" ref={canvasRef}>
-      {!graphData.nodes.length ? <div className="galaxy-empty"><Sparkles size={34} /><h3>{emptyFiltered ? '当前筛选没有相关星点' : '你的星系，从第一份资料开始'}</h3><p>{emptyFiltered ? '清除资料库筛选，或者调整分类和标签显示。' : '导入资料或创建知识节点，再添加分类、标签和关联。'}</p></div> : !webgl ? <div className="galaxy-empty"><Move3D size={34} /><h3>当前设备无法显示 3D 星系</h3><p>此视图需要 WebGL 2。请开启硬件加速，更新显卡驱动后重试。</p><button type="button" onClick={retry}>重新检测</button></div> : <GraphBoundary key={retryKey} onRetry={retry} onFailure={() => setWebgl(false)}><ForceGraph3D<GalaxyNode, GalaxyLink>
+      {!graphData.nodes.length ? <div className="galaxy-empty"><Sparkles size={24} /><h3>{emptyFiltered ? '没有匹配的节点' : '暂无节点'}</h3><p>{emptyFiltered ? '调整或清除筛选。' : '导入资料或添加知识节点。'}</p></div> : !webgl ? <div className="galaxy-empty"><Move3D size={24} /><h3>无法显示图谱</h3><p>请开启硬件加速，并确认设备支持 WebGL 2。</p><button type="button" onClick={retry}>重试</button></div> : <GraphBoundary key={retryKey} onRetry={retry} onFailure={() => setWebgl(false)}><ForceGraph3D<GalaxyNode, GalaxyLink>
         ref={graphRef} graphData={graphData} width={size.width} height={size.height} controlType="orbit" numDimensions={3}
-        backgroundColor="#070c18" showNavInfo={false} nodeThreeObject={nodeObject} nodeLabel={node => `${safeText(node.title)} · ${safeText(node.subtitle)}`}
+        backgroundColor="#ffffff" showNavInfo={false} nodeThreeObject={nodeObject} nodeLabel={node => `${safeText(node.title)} · ${safeText(node.subtitle)}`}
         nodeVal={node => node.kind === 'document' ? 1.5 : 3} linkLabel={link => safeText(link.name)}
-        linkColor={link => emphasized ? endpointId(link.source) === emphasized || endpointId(link.target) === emphasized ? '#9facf4' : '#182235' : link.derived ? '#263750' : '#567387'}
-        linkOpacity={0.65} linkWidth={link => emphasized && (endpointId(link.source) === emphasized || endpointId(link.target) === emphasized) ? 0.65 : 0.22}
+        linkColor={link => emphasized ? endpointId(link.source) === emphasized || endpointId(link.target) === emphasized ? '#8768c5' : '#eae8ee' : link.derived ? '#cdd0d8' : '#a2a8b6'}
+        linkOpacity={0.76} linkWidth={link => emphasized && (endpointId(link.source) === emphasized || endpointId(link.target) === emphasized) ? 0.65 : link.derived ? 0.22 : 0.3}
         linkDirectionalParticles={link => !link.derived && (endpointId(link.source) === emphasized || endpointId(link.target) === emphasized) ? 2 : 0}
-        linkDirectionalParticleWidth={0.9} linkDirectionalParticleSpeed={0.003} linkDirectionalParticleColor={() => '#b4e8ec'}
+        linkDirectionalParticleWidth={0.7} linkDirectionalParticleSpeed={0.003} linkDirectionalParticleColor={() => '#7c5cce'}
         d3AlphaDecay={0.035} d3VelocityDecay={0.32} cooldownTicks={180} onEngineTick={recordPositions} onEngineStop={recordPositions}
         onNodeClick={focusOn} onNodeHover={node => setHoverId(node?.id)} onBackgroundClick={() => { setFocusId(undefined); setDepth('all'); }}
         onNodeDragEnd={node => { node.fx = node.x; node.fy = node.y; node.fz = node.z; pinnedIdsRef.current.add(node.id); recordPositions(); setSavedMessage('星点已固定，保存可保留位置'); }}
       /></GraphBoundary>}
       {!!graphData.nodes.length && webgl && <>
-        <div className="galaxy-map-heading"><span className="galaxy-eyebrow">YOUR KNOWLEDGE, CONNECTED</span><h2>每一份资料，都有自己的轨道</h2><p>{grouped ? '分组仅调整位置与颜色，连线仍表示实际关联' : '沿着关联，发现知识之间的联系'}</p></div>
-        <div className="galaxy-stats"><span><b>{graphData.nodes.length}</b> 星点</span><i /><span><b>{graphData.links.length}</b> 关联</span><span className="galaxy-three-badge">3D</span></div>
-        {focusNode && <div className="galaxy-focus-card"><div><i style={{ background: focusNode.color }} /><small>{KIND_LABELS[focusNode.kind]} · {focusNode.subtitle}</small><button type="button" aria-label="取消星点聚焦" onClick={() => { setFocusId(undefined); setDepth('all'); }}><X size={14} /></button></div><strong>{focusNode.title}</strong><p>{linkedCount} 个直接关联</p><div className="galaxy-focus-actions"><button type="button" onClick={() => focusOn(focusNode)}><Focus size={14} />靠近</button><select aria-label="显示关联层数" value={depth} onChange={event => setDepth(event.target.value)}><option value="all">整个星系</option><option value="1">只看一层关联</option><option value="2">查看两层关联</option></select></div></div>}
+        <div className="galaxy-stats"><span>{graphData.nodes.length} 节点</span><span>·</span><span>{graphData.links.length} 关联</span></div>
+        {focusNode && <div className="galaxy-focus-card"><div><i style={{ background: focusNode.color }} /><small>{focusNode.subtitle} · {linkedCount} 个关联</small><button type="button" aria-label="取消星点聚焦" onClick={() => { setFocusId(undefined); setDepth('all'); }}><X size={13} /></button></div><strong>{focusNode.title}</strong><div className="galaxy-focus-actions"><button type="button" title="聚焦节点" aria-label="聚焦节点" onClick={() => focusOn(focusNode)}><Focus size={14} /></button><select aria-label="显示关联层数" value={depth} onChange={event => setDepth(event.target.value)}><option value="all">全部节点</option><option value="1">一层关联</option><option value="2">两层关联</option></select></div></div>}
         <div className="galaxy-legend">{grouped ? fullGraph.groups.slice(0, 8).map(group => <span key={group.name}><i style={{ background: group.color }} />{group.name}</span>) : Object.entries(KIND_COLORS).filter(([kind]) => graphData.nodes.some(node => node.kind === kind)).map(([kind, color]) => <span key={kind}><i style={{ background: color }} />{KIND_LABELS[kind as GalaxyNode['kind']]}</span>)}{grouped && fullGraph.groups.length > 8 && <span>+{fullGraph.groups.length - 8} 组</span>}</div>
-        <div className="galaxy-navigation"><Move3D size={14} /><span>拖动旋转</span><i />滚轮缩放<i />右键平移<i />点击聚焦</div>
       </>}
       {savedMessage && <div className="galaxy-toast" role="status">{savedMessage}</div>}
     </div>

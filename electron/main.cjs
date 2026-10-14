@@ -76,7 +76,7 @@ async function initializeRepository() {
   repository = await createExample(exampleRoot); rememberLibrary();
 }
 async function createWindow() {
-  window = new BrowserWindow({ width: 1520, height: 980, minWidth: 1080, minHeight: 720, show: false, title: '知识星系', backgroundColor: '#101719', autoHideMenuBar: true, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, allowRunningInsecureContent: false } });
+  window = new BrowserWindow({ width: 1520, height: 980, minWidth: 1080, minHeight: 720, show: false, title: '知识星系', backgroundColor: '#ffffff', autoHideMenuBar: true, webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, allowRunningInsecureContent: false } });
   window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   window.webContents.on('will-navigate', event => event.preventDefault());
   window.webContents.on('will-attach-webview', event => event.preventDefault());
