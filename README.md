@@ -6,6 +6,8 @@ NoteOrbit（知识星系）是面向个人电脑的教学资料管理应用。�
 
 当前版本：**0.2.2**。已提供 Windows x64 便携版。日常使用不需要账号、服务器或网络。
 
+[下载 Windows 便携版](https://github.com/zzyyyds0/noteorbit/releases/latest) · [查看 0.2.2 发布说明](https://github.com/zzyyyds0/noteorbit/releases/tag/v0.2.2)
+
 ![NoteOrbit 资料库](preview.png)
 
 ![NoteOrbit 3D 星系](preview-galaxy.png)
@@ -29,6 +31,8 @@ NoteOrbit（知识星系）是面向个人电脑的教学资料管理应用。�
 ## 快速开始
 
 ### Windows 便携版
+
+从 [GitHub Releases](https://github.com/zzyyyds0/noteorbit/releases/latest) 下载 `NoteOrbit-0.2.2-x64.exe`，双击即可运行，无需下载源码。
 
 在包含发行包的项目目录中双击 `启动NoteOrbit.cmd`，或直接运行：
 
